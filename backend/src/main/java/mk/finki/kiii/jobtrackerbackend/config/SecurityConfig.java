@@ -1,6 +1,7 @@
 package mk.finki.kiii.jobtrackerbackend.config;
 
 import lombok.Value;
+import mk.finki.kiii.jobtrackerbackend.security.NoPopupBasicAuthEntryPoint;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
@@ -63,7 +64,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/actuator/health/**").permitAll()
                         .anyRequest().authenticated())
-                .httpBasic(Customizer.withDefaults());
+                .httpBasic(basic -> basic.authenticationEntryPoint(new NoPopupBasicAuthEntryPoint()));
         return http.build();
     }
 }
