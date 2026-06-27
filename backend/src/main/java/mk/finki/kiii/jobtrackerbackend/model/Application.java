@@ -18,6 +18,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import mk.finki.kiii.jobtrackerbackend.model.enums.ApplicationStatus;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "applications")
@@ -55,4 +56,17 @@ public class Application {
 
     @Column(columnDefinition = "TEXT")
     private String notes;
+
+
+    @Column(name = "recruiter_name")
+    private String recruiterName;
+
+    @Column(name = "salary")
+    private String salary;
+
+    @Column(name = "location")
+    private String location;
+
+    @Column(name = "interview_datetime")
+    private LocalDateTime interviewDateTime;
 }

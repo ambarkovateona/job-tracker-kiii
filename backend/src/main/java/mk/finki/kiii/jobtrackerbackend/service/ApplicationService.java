@@ -4,17 +4,22 @@ import lombok.RequiredArgsConstructor;
 import mk.finki.kiii.jobtrackerbackend.exception.ApplicationNotFoundException;
 import mk.finki.kiii.jobtrackerbackend.exception.InvalidStatusTransitionException;
 import mk.finki.kiii.jobtrackerbackend.model.Application;
+import mk.finki.kiii.jobtrackerbackend.model.ApplicationStatusHistory;
 import mk.finki.kiii.jobtrackerbackend.model.Company;
 import mk.finki.kiii.jobtrackerbackend.model.User;
+import mk.finki.kiii.jobtrackerbackend.model.dto.ApplicationDetailsUpdateDto;
 import mk.finki.kiii.jobtrackerbackend.model.dto.ApplicationRequestDto;
 import mk.finki.kiii.jobtrackerbackend.model.dto.ApplicationResponseDto;
+import mk.finki.kiii.jobtrackerbackend.model.dto.StatusHistoryEntryDto;
 import mk.finki.kiii.jobtrackerbackend.model.enums.ApplicationStatus;
 import mk.finki.kiii.jobtrackerbackend.repository.ApplicationRepository;
+import mk.finki.kiii.jobtrackerbackend.repository.ApplicationStatusHistoryRepository;
 import mk.finki.kiii.jobtrackerbackend.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -35,6 +40,16 @@ public class ApplicationService {
     private final UserRepository userRepository;
     private final CompanyService companyService;
 
+    private final ApplicationStatusHistoryRepository statusHistoryRepository;
+
+    private void recordStatusChange(Application application, ApplicationStatus status) {
+        statusHistoryRepository.save(ApplicationStatusHistory.builder()
+                .application(application)
+                .status(status)
+                .changedAt(LocalDateTime.now())
+                .build());
+    }
+
     @Transactional
     public ApplicationResponseDto create(Long userId, ApplicationRequestDto request) {
         User user = userRepository.findById(userId)
@@ -49,9 +64,15 @@ public class ApplicationService {
                 .status(ApplicationStatus.APPLIED)
                 .appliedDate(request.appliedDate())
                 .notes(request.notes())
+                .recruiterName(request.recruiterName())
+                .salary(request.salary())
+                .location(request.location())
+                .interviewDateTime(request.interviewDateTime())
                 .build();
 
-        return toResponse(applicationRepository.save(application));
+        Application saved = applicationRepository.save(application);
+        recordStatusChange(saved, ApplicationStatus.APPLIED);
+        return toResponse(saved);
     }
 
     public List<ApplicationResponseDto> listMine(Long userId) {
@@ -71,6 +92,30 @@ public class ApplicationService {
 
         application.setStatus(newStatus);
         application.setLastUpdated(LocalDate.now());
+        recordStatusChange(application, newStatus);
+        return toResponse(application);
+    }
+
+    @Transactional
+    public ApplicationResponseDto updateDetails(Long userId, Long applicationId, ApplicationDetailsUpdateDto request) {
+        Application application = getOwnedApplication(userId, applicationId);
+
+        if (request.recruiterName() != null) {
+            application.setRecruiterName(request.recruiterName());
+        }
+        if (request.salary() != null) {
+            application.setSalary(request.salary());
+        }
+        if (request.location() != null) {
+            application.setLocation(request.location());
+        }
+        if (request.interviewDateTime() != null) {
+            application.setInterviewDateTime(request.interviewDateTime());
+        }
+        if (request.notes() != null) {
+            application.setNotes(request.notes());
+        }
+
         return toResponse(application);
     }
 
@@ -92,7 +137,15 @@ public class ApplicationService {
     private ApplicationResponseDto toResponse(Application a) {
         return new ApplicationResponseDto(
                 a.getId(), a.getCompany().getName(), a.getPosition(),
-                a.getStatus(), a.getAppliedDate(), a.getLastUpdated(), a.getNotes()
+                a.getStatus(), a.getAppliedDate(), a.getLastUpdated(), a.getNotes(),
+                a.getRecruiterName(), a.getSalary(), a.getLocation(), a.getInterviewDateTime()
         );
+    }
+
+    public List<StatusHistoryEntryDto> getHistory(Long userId, Long applicationId) {
+        getOwnedApplication(userId, applicationId);
+        return statusHistoryRepository.findByApplicationIdOrderByChangedAtAsc(applicationId).stream()
+                .map(h -> new StatusHistoryEntryDto(h.getStatus(), h.getChangedAt()))
+                .toList();
     }
 }
