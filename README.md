@@ -14,23 +14,13 @@ JobFlow is a full-stack job application tracker built as the term project for th
 - **Custom design system** — Tailwind CSS tokens, accessible Radix UI dialogs, Lucide icons
 
 ## 🏗️ Architecture
-┌──────────┐      ┌──────────────┐      ┌─────────────┐
 
-│  Browser  │ ───▶ │    nginx      │ ───▶ │ Spring Boot │
-
-│           │      │  (frontend)   │ /api │   backend   │
-
-└──────────┘      └──────────────┘      └──────┬──────┘
-
-│
-
-▼
-
-┌─────────────┐
-
-│ PostgreSQL   │
-
-└─────────────┘
+```mermaid
+flowchart LR
+    Browser -->|HTTP| Frontend["nginx + React SPA"]
+    Frontend -->|"/api/*"| Backend["Spring Boot API"]
+    Backend --> DB[("PostgreSQL")]
+```
 
 The frontend never calls the backend by absolute URL — it always uses relative paths (`/api/...`). In Docker Compose, nginx transparently proxies those requests to the backend container. In Kubernetes, the Ingress does the same routing at the cluster edge. The same Docker image works unmodified in both environments.
 
@@ -43,7 +33,7 @@ The frontend never calls the backend by absolute URL — it always uses relative
 | Database | PostgreSQL 16 |
 | Containers | Docker (multi-stage, non-root images), Docker Compose |
 | CI/CD | GitHub Actions (test → build → push to Docker Hub) |
-| Orchestration | Kubernetes — Deployment, StatefulSet, Service, Ingress, ConfigMap, Secret |
+| Orchestration | Kubernetes — Deployment, StatefulSet, Service, Ingress, ConfigMap, Secret, HPA |
 
 ## 🚀 Running locally with Docker Compose
 
@@ -57,7 +47,7 @@ POSTGRES_DB=jobtracker
 
 POSTGRES_USER=postgres
 
-POSTGRES_PASSWORD=example
+POSTGRES_PASSWORD=postgres
 
 Then:
 
@@ -81,7 +71,7 @@ Tested locally on [k3d](https://k3d.io) (k3s in Docker), which ships with Traefi
 k3d cluster create jobtracker --api-port 127.0.0.1:6550 \
   -p "8080:80@loadbalancer" -p "8443:443@loadbalancer"
 
-kubectl apply -f k8s/00-namespace.yaml
+kubectl apply -f k8s/namespace.yaml
 kubectl apply -f k8s/
 kubectl get all -n jobtracker
 ```
@@ -96,7 +86,7 @@ Open **http://localhost:8080**.
 | `ConfigMap` | Non-sensitive config — DB host, port, name, username |
 | `Secret` | Database password |
 | `StatefulSet` + headless `Service` | PostgreSQL, with a `PersistentVolumeClaim` for durable storage |
-| `Deployment` + `Service` (×2) | Backend (Spring Boot) and frontend (nginx) |
+| `Deployment` + `Service` (×2) | Backend (Spring Boot) and frontend (nginx), each with CPU/memory requests and limits |
 | `Ingress` | Path-based routing — `/api` → backend service, `/` → frontend service |
 
 ## 🔄 CI/CD pipeline
