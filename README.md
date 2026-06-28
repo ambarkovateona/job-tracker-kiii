@@ -13,7 +13,8 @@ JobFlow is a full-stack job application tracker built as the term project for th
 - **Company autocomplete** — suggests existing companies (and their industry) while adding a new application
 - **Custom design system** — Tailwind CSS tokens, accessible Radix UI dialogs, Lucide icons
 
-## 🏗️ Architecture┌──────────┐      ┌──────────────┐      ┌─────────────┐
+## 🏗️ Architecture
+┌──────────┐      ┌──────────────┐      ┌─────────────┐
 
 │  Browser  │ ───▶ │    nginx      │ ───▶ │ Spring Boot │
 
