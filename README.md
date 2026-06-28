@@ -100,17 +100,15 @@ On every push or pull request to `main`, [`.github/workflows/ci-cd.yml`](.github
    - [`ambarkovateona/job-tracker-frontend`](https://hub.docker.com/r/ambarkovateona/job-tracker-frontend)
 
 ## 📁 Project structure
+
+```
 job-tracker-kiii/
-
 ├── backend/             # Spring Boot REST API
-
 ├── frontend/            # React + TypeScript SPA
-
 ├── k8s/                 # Kubernetes manifests
-
 ├── .github/workflows/   # CI/CD pipeline definition
-
 └── docker-compose.yaml  # Local 3-service orchestration
+```
 
 ## 📖 API documentation
 
