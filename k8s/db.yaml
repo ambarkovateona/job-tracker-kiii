@@ -19,6 +19,13 @@ spec:
           image: postgres:16
           ports:
             - containerPort: 5432
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
           env:
             - name: POSTGRES_DB
               valueFrom:
@@ -40,14 +47,18 @@ spec:
               mountPath: /var/lib/postgresql/data
           readinessProbe:
             exec:
-              command: ["pg_isready", "-U", "postgres", "-d", "jobtracker"]
+              command: [ "pg_isready", "-U", "postgres", "-d", "jobtracker" ]
             initialDelaySeconds: 5
             periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
           livenessProbe:
             exec:
-              command: ["pg_isready", "-U", "postgres", "-d", "jobtracker"]
+              command: [ "pg_isready", "-U", "postgres", "-d", "jobtracker" ]
             initialDelaySeconds: 15
             periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
   volumeClaimTemplates:
     - metadata:
         name: postgres-storage
